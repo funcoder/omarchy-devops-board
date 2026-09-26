@@ -48,6 +48,11 @@ omarchy plugin add https://github.com/funcoder/omarchy-devops-board.git --enable
 The **DevOps Board** bar widget can be added from Omarchy's bar settings. Update
 with `omarchy plugin update funcoder.devops-board`.
 
+Once enabled, the board also appears under **Apps** in the Omarchy menu and in
+the app launcher: at startup the plugin writes
+`~/.local/share/applications/funcoder-devops-board.desktop`. Delete that file
+if you remove the plugin.
+
 The board is a normal Hyprland window (title `DevOps Board`): it tiles, moves
 between workspaces and closes with Super+W. Its layout adapts to narrow tiles.
 `summon` opens it, or focuses it if it's already open. Bind a key in

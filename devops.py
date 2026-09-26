@@ -19,6 +19,7 @@ Commands:
   comment <id>                 stdin {"text"}; adds a discussion comment
   pref hideClosed on|off       remember whether closed sprints and items are hidden
   demo on|off                  serve built-in sample data (no Azure access)
+  launcher                     write the .desktop entry that lists the board in Apps
 
 The token lives in the desktop keyring (secret-tool), keyed by organization.
 AZURE_DEVOPS_EXT_PAT is used when the keyring has nothing.
@@ -1052,6 +1053,43 @@ def cmd_pref(args):
     return {"ok": True, args[0]: cfg[args[0]]}
 
 
+LAUNCHER_FILE = os.path.join(
+    os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"),
+    "applications", APP + ".desktop")
+
+
+def cmd_launcher(args):
+    # The Omarchy menu's Apps list and the app launcher are both built from
+    # .desktop entries, so one here is what makes the board show up there.
+    # Only rewritten when it differs, so a shell restart doesn't touch it.
+    here = os.path.dirname(os.path.realpath(__file__))
+    entry = "\n".join([
+        "[Desktop Entry]",
+        "Type=Application",
+        "Name=DevOps Board",
+        "Comment=Your Azure DevOps team's sprint board",
+        'Exec=omarchy-shell shell summon funcoder.devops-board "{}"',
+        "Icon=" + os.path.join(here, "icon.svg"),
+        "Terminal=false",
+        "Categories=Development;ProjectManagement;",
+        "Keywords=azure;devops;sprint;scrum;board;tasks;",
+        "StartupNotify=false",
+        "",
+    ])
+    try:
+        with open(LAUNCHER_FILE) as f:
+            if f.read() == entry:
+                return {"ok": True, "changed": False, "path": LAUNCHER_FILE}
+    except OSError:
+        pass
+    os.makedirs(os.path.dirname(LAUNCHER_FILE), exist_ok=True)
+    tmp = LAUNCHER_FILE + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(entry)
+    os.replace(tmp, LAUNCHER_FILE)
+    return {"ok": True, "changed": True, "path": LAUNCHER_FILE}
+
+
 def cmd_demo(args):
     cfg = load_config()
     cfg["demo"] = bool(args and args[0] == "on")
@@ -1224,6 +1262,7 @@ COMMANDS = {
     "comment": cmd_comment,
     "demo": cmd_demo,
     "pref": cmd_pref,
+    "launcher": cmd_launcher,
 }
 
 
