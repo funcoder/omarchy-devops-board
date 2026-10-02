@@ -1,14 +1,18 @@
 # DevOps Board
 
 An Omarchy shell plugin that shows your Azure DevOps team's sprint in a
-keyboard-driven window: user stories (and bugs) with their tasks nested
-underneath, how far through the sprint you are, and an editor for any story
-or task.
+keyboard-driven window: every work item the iteration touches, from the
+Epic or Feature above it down to the Tasks beneath it, how far through the
+sprint you are, and an editor for any of them.
 
-- **Board**: stories in backlog order with state glyphs (○ to do, ◐ in
-  progress, ● done), task progress, points, remaining hours and assignee
-  initials, with your own items highlighted. A bar across the top shows tasks
-  done or in progress, plus a marker for today's position in the sprint.
+- **Board**: the full backlog hierarchy nested under each other — Epic >
+  Feature > Story/Bug > Task — in backlog order, with state glyphs (○ to
+  do, ◐ in progress, ● done), roll-up progress bars and counts, points on
+  stories, remaining hours on tasks, and assignee initials, with your own
+  items highlighted. A bar across the top shows tasks done or in progress,
+  plus a marker for today's position in the sprint. Toggle **Backlog**
+  (Ctrl+B) to show every active item in the project instead of just the
+  current sprint — handy when nothing's been planned yet.
 - **Editor**: title, state, assignee, story points / effort or remaining
   hours, priority, tags, description (or repro steps) and acceptance
   criteria. It also shows the parent and child items and the discussion, and
@@ -23,7 +27,7 @@ or task.
 
 | Where | Keys |
 |---|---|
-| Board | type to filter · ↑↓ move · → ← expand / collapse · Enter open · Tab all / mine · Ctrl+← → sprint · Ctrl+T team · Ctrl+R refresh · Ctrl+H hide closed · Ctrl+O open in browser · Ctrl+, connection · Esc clear filter |
+| Board | type to filter · ↑↓ move · → ← expand / collapse · Enter open · Tab all / mine · Ctrl+← → sprint · Ctrl+B backlog · Ctrl+T team · Ctrl+R refresh · Ctrl+H hide closed · Ctrl+O open in browser · Ctrl+, connection · Esc clear filter |
 | Editor | Tab next field · Ctrl+S save · Ctrl+Enter post comment · Ctrl+R reload · Ctrl+O browser · Esc leave field, then back |
 
 Rich text is edited as light markdown: paragraphs, `- ` and `1. ` lists,
@@ -42,7 +46,7 @@ browser), so nothing is lost in the round trip.
 ## Install
 
 ```sh
-omarchy plugin add https://github.com/funcoder/omarchy-devops-board.git --enable
+omarchy plugin add https://github.com/abdullahazmy/omarchy-devops-board.git --enable
 ```
 
 The **DevOps Board** bar widget can be added from Omarchy's bar settings. Update
@@ -100,6 +104,10 @@ H=~/.config/omarchy/plugins/funcoder.devops-board/devops.py
 $H status
 $H teams
 $H board                       # current sprint; --iteration <id> for another
+                                  # walks parents, so Epics and Features above
+                                  # the iteration's items show too
+$H board --backlog              # every active item in the project (not just
+                                  # what's in the current sprint)
 $H item 4812
 echo '{"changes":{"state":"Active"}}' | $H update 4812
 omarchy-shell funcoder.devops-board item 4812   # open the card on an item

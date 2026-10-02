@@ -261,17 +261,19 @@ Item {
         onClicked: root.guard("back")
       }
 
-      Text {
-        Layout.alignment: Qt.AlignVCenter
-        textFormat: Text.PlainText
-        text: !root.item ? app.glyphBoard
-          : root.item.type === "Bug" ? app.glyphBug
-          : root.item.type === "Task" ? app.stateGlyph(root.item.category, root.item.state)
-          : app.glyphStory
-        color: root.item ? app.stateColor(root.item.state, root.item.category, app.foreground) : app.foreground
-        font.family: app.fontFamily
-        font.pixelSize: app.compact ? Style.font.iconLarge : Style.font.display
-      }
+Text {
+          Layout.alignment: Qt.AlignVCenter
+          textFormat: Text.PlainText
+          text: !root.item ? app.glyphBoard
+            : root.item.type === "Epic" ? app.glyphEpic
+            : root.item.type === "Feature" ? app.glyphFeature
+            : root.item.type === "Bug" ? app.glyphBug
+            : root.item.type === "Task" ? app.stateGlyph(root.item.category, root.item.state)
+            : app.glyphStory
+          color: root.item ? app.stateColor(root.item.state, root.item.category, app.foreground) : app.foreground
+          font.family: app.fontFamily
+          font.pixelSize: app.compact ? Style.font.iconLarge : Style.font.display
+        }
 
       ColumnLayout {
         Layout.fillWidth: true
@@ -552,8 +554,12 @@ Item {
             visible: root.item !== null && root.item.children.length > 0
             text: {
               if (!root.item) return ""
+              var label = "CHILDREN"
+              if (root.item.type === "Epic") label = "FEATURES"
+              else if (root.item.type === "Feature") label = "USER STORIES"
+              else if (root.item.type === "User Story" || root.item.type === "Bug") label = "TASKS"
               var done = root.item.children.filter(function(c) { return c.category === "done" }).length
-              return (root.item.type === "Task" ? "CHILDREN" : "TASKS") + "  ·  " + done + "/" + root.item.children.length + " DONE"
+              return label + "  ·  " + done + "/" + root.item.children.length + " DONE"
             }
           }
 
@@ -751,7 +757,14 @@ Item {
       anchors.leftMargin: Style.spacing.md
       anchors.verticalCenter: parent.verticalCenter
       textFormat: Text.PlainText
-      text: linkRow.link ? (linkRow.link.type === "Bug" ? app.glyphBug : app.stateGlyph(linkRow.link.category, linkRow.link.state)) : ""
+      text: {
+        if (!linkRow.link) return ""
+        if (linkRow.link.type === "Epic") return app.glyphEpic
+        if (linkRow.link.type === "Feature") return app.glyphFeature
+        if (linkRow.link.type === "Bug") return app.glyphBug
+        if (linkRow.link.type === "Task") return app.stateGlyph(linkRow.link.category, linkRow.link.state)
+        return app.glyphStory
+      }
       color: linkRow.link ? app.stateColor(linkRow.link.state, linkRow.link.category, app.foreground) : app.foreground
       opacity: linkRow.link && linkRow.link.category === "done" ? 0.5 : 1
       font.family: app.fontFamily
