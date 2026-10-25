@@ -31,6 +31,8 @@ Item {
   property var board: null
   property bool boardLoading: false
   property string boardError: ""
+  // The last board error is fixed by a new token (missing, rejected, or short of a scope).
+  property bool boardTokenProblem: false
   property string iterationId: ""
   property bool mineOnly: false
   property bool hideClosed: false
@@ -208,6 +210,7 @@ Item {
       hideClosed = data.hideClosed === true
       if (data.error) {
         boardError = data.error
+        boardTokenProblem = data.tokenProblem === true
         view = "setup"
       } else if (!data.connected) {
         view = "setup"
@@ -312,11 +315,13 @@ Item {
       boardLoading = false
       if (data.error) {
         boardError = data.error
+        boardTokenProblem = data.tokenProblem === true
         if (/Choose a team/.test(data.error)) showTeams()
         else if (/Not connected|No token|Token rejected/.test(data.error) && !board) showSetup()
         return
       }
       boardError = ""
+      boardTokenProblem = false
       applyBoard(data)
     })
   }
@@ -1112,11 +1117,12 @@ Item {
 
               Item {
                 width: parent.width
-                height: statsLine.implicitHeight
+                height: Math.max(statsLine.implicitHeight, headerTokenButton.visible ? headerTokenButton.implicitHeight : 0)
 
                 Text {
                   id: statsLine
                   anchors.left: parent.left
+                  anchors.verticalCenter: parent.verticalCenter
                   anchors.right: updatedLine.left
                   anchors.rightMargin: root.contentSpacing
                   textFormat: Text.PlainText
@@ -1129,7 +1135,9 @@ Item {
 
                 Text {
                   id: updatedLine
-                  anchors.right: parent.right
+                  anchors.right: headerTokenButton.visible ? headerTokenButton.left : parent.right
+                  anchors.rightMargin: headerTokenButton.visible ? root.contentSpacing : 0
+                  anchors.verticalCenter: parent.verticalCenter
                   textFormat: Text.PlainText
                   text: root.boardError !== "" && root.board ? root.boardError : root.updatedText()
                   color: root.boardError !== "" && root.board ? root.urgent : root.dim
@@ -1137,6 +1145,20 @@ Item {
                   font.pixelSize: Style.font.caption
                   width: Math.min(implicitWidth, parent.width * 0.5)
                   elide: Text.ElideRight
+                }
+
+                Button {
+                  id: headerTokenButton
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  visible: root.boardTokenProblem && !!root.board
+                  text: "Change token"
+                  fontSize: Style.font.caption
+                  foreground: root.foreground
+                  fontFamily: root.fontFamily
+                  bordered: true
+                  tooltipText: "Paste a new personal access token  (Ctrl+,)"
+                  onClicked: root.showSetup()
                 }
               }
             }
@@ -1181,18 +1203,35 @@ Item {
                 delegate: BoardRow {}
               }
 
-              Text {
+              Column {
                 anchors.centerIn: parent
                 width: parent.width
                 visible: root.view === "board" && rowsModel.count === 0
-                textFormat: Text.PlainText
-                text: root.emptyText()
-                color: root.boardError !== "" && !root.board ? root.urgent : root.foreground
-                opacity: 0.7
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.title
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.Wrap
+                spacing: root.contentSpacing
+
+                Text {
+                  width: parent.width
+                  textFormat: Text.PlainText
+                  text: root.emptyText()
+                  color: root.boardError !== "" && !root.board ? root.urgent : root.foreground
+                  opacity: 0.7
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.title
+                  horizontalAlignment: Text.AlignHCenter
+                  wrapMode: Text.Wrap
+                }
+
+                Button {
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  visible: root.boardTokenProblem && !root.board
+                  text: "Change token"
+                  fontSize: Style.font.body
+                  foreground: root.foreground
+                  fontFamily: root.fontFamily
+                  bordered: true
+                  tooltipText: "Paste a new personal access token  (Ctrl+,)"
+                  onClicked: root.showSetup()
+                }
               }
 
               ListView {

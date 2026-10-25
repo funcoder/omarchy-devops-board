@@ -83,6 +83,10 @@ class Failure(Exception):
     pass
 
 
+class TokenFailure(Failure):
+    """The token is missing, rejected or short of a scope; a new one fixes it."""
+
+
 def emit(obj):
     sys.stdout.write(json.dumps(obj, ensure_ascii=False))
     sys.stdout.write("\n")
@@ -324,14 +328,14 @@ class Client:
             if exc.code == 400 and "-preview" in detail and "api-version=" in url and "-preview" not in url:
                 return self.request(method, re.sub(r"(api-version=[0-9.]+)", r"\1-preview", url),
                                     body, content_type, deadline)
-            raise Failure(http_message(exc.code, detail))
+            raise (TokenFailure if exc.code in (401, 203, 403) else Failure)(http_message(exc.code, detail))
         except urllib.error.URLError as exc:
             raise Failure("Can't reach %s (%s)" % (urllib.parse.urlparse(url).netloc, exc.reason))
         except TimeoutError:
             raise Failure("Azure DevOps took too long to answer")
         if "json" not in ctype:
             # A sign-in page instead of JSON means the token was not accepted.
-            raise Failure("Token rejected: Azure DevOps answered with a sign-in page")
+            raise TokenFailure("Token rejected: Azure DevOps answered with a sign-in page")
         return check_shape(json.loads(raw.decode("utf-8") or "{}"))
 
     def get(self, path, params=None, project=True, team=None):
@@ -366,7 +370,7 @@ def client_from_config(cfg=None, need_project=True):
         raise Failure("Choose a team")
     token = token_lookup(cfg["org"])
     if not token:
-        raise Failure("No token saved for %s" % cfg["org"])
+        raise TokenFailure("No token saved for %s" % cfg["org"])
     return Client(cfg["org"], cfg.get("project", ""), token)
 
 
@@ -1272,6 +1276,8 @@ def main(argv):
         return 2
     try:
         emit(COMMANDS[argv[0]](argv[1:]))
+    except TokenFailure as exc:
+        emit({"error": str(exc), "tokenProblem": True})
     except Failure as exc:
         emit({"error": str(exc)})
     except Exception as exc:  # keep the board informative instead of silent
